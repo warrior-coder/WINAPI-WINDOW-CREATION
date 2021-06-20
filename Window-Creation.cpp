@@ -16,10 +16,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         case WM_DESTROY:
             /*
-            When you want to exit the applicationand break out of the message loop, call the PostQuitMessage function.
-            PostQuitMessage(0);
-            The PostQuitMessage function puts 0 on the message queue.
-            It causes GetMessage to return 0, signaling the end of the message loop.
+            The PostQuitMessage function posts a WM_QUIT message to the message queue
             */
             PostQuitMessage(0);
         break;
@@ -40,24 +37,31 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 int main()
 {
+    // Handle to the application instance
+    HINSTANCE hInstance = GetModuleHandleW(nullptr);
+    
     // Register the window class, WNDCLASS - window class
     WNDCLASS wc = {};
     wc.lpfnWndProc = WindowProc;
+    wc.hInstance = hInstance;
     wc.lpszClassName = L"MyWindow";
     RegisterClassW(&wc);
 
-    // Create the window, HWND - handle window
+    // Create the window, HWND - handle to the window
     HWND hwnd = CreateWindowExW(
-        0,                     // Optional window styles
-        L"MyWindow",           // Window class
-        L"My Window",          // Window title
-        WS_OVERLAPPEDWINDOW,   // Window style
-        0,                     // X
-        0,                     // Y
-        600,                   // Width
-        400,                   // Height
-        NULL, NULL, NULL, NULL // Optional parametrs
-    );
+        0,                   // Optional window styles
+        L"MyWindow",         // Window class
+        L"My Window",        // Window title
+        WS_OVERLAPPEDWINDOW, // Window style
+        CW_USEDEFAULT,       // X
+        CW_USEDEFAULT,       // Y
+        600,                 // Width
+        400,                 // Height
+        NULL,                // Parent window    
+        NULL,                // Menu
+        hInstance,           // Instance handle
+        NULL                 // Additional application data
+    );  
 
     // Show the window
     ShowWindow(hwnd, SW_SHOWNORMAL);
@@ -74,10 +78,17 @@ int main()
     while (GetKeyState(VK_ESCAPE) >= 0)
     {
         // Processing window messages
-        if (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
+        if (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
         {
-            if (msg.message == WM_QUIT) break;
+            /*
+            GetMessage is a blocking function
+            It waits until a message is received from the queue. During this time program is standing
+            For that case use PeekMessage function instead. It checks if the message in the queue and runs further
+            PeekMessage uses the same parameters + one for removing messages
+            */
+
             DispatchMessageW(&msg);
+            if (msg.message == WM_QUIT) break;
         }
 
         /*  For example, user presses the left mouse button. This causes a chain of events:
